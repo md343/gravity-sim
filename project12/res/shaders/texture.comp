@@ -1,0 +1,47 @@
+#version 460 core
+
+struct pos
+{
+	vec4 position;
+	vec4 velocity;
+	vec4 mass;
+};
+
+layout(rgba32f, binding = 0) uniform image2D screen;
+layout(std430, binding=1) buffer Pos
+{
+    pos points[];
+};
+
+uniform int PARTICLES;
+
+layout(local_size_x = 8, local_size_y = 4, local_size_z = 1) in;
+void main()
+{
+	vec4 pixel = vec4(0.075, 0.133, 0.173, 1.0);
+	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
+	//float dist = 1000;
+
+	ivec2 dims = imageSize(screen);
+	float x = -(float(pixel_coords.x * 2 - dims.x) / dims.x); // transforms to [-1.0, 1.0]
+	float y = -(float(pixel_coords.y * 2 - dims.y) / dims.y); // transforms to [-1.0, 1.0]
+	for (int i = 0; i<PARTICLES; i++)
+	{	
+		
+		vec2 c1 = vec2(x, y);
+		vec2 c2 = points[i].position.xy;
+		float test = distance(c1, c2);
+		float size = points[i].mass.x;
+		// if (i==0){
+		// 	size = 1;
+		// }
+		float col = min(1.0, size);
+		if (test < size)
+		{
+			pixel = vec4(0.8, col, 0.5, 1.0);
+			break;
+		}
+	}
+
+	imageStore(screen, pixel_coords, pixel);
+}
